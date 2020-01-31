@@ -1,6 +1,7 @@
 from array import array
 from sys import byteorder
 from struct import pack
+
 import numpy as np
 import time
 import pyaudio
@@ -50,8 +51,8 @@ def listen(filename):
     # Begin recording the data until a significant pause occurs
     while True: 
 
-        wavelength = max(audio_chunk)/500
-        print (np.ones(int(wavelength)))
+        wavelength = max(audio_chunk)/500   # Outputs some naff
+        print (np.ones(int(wavelength)))    # wavelengths to terminal
 
         audio_chunk = array('h', stream.read(chunk))
         if byteorder == 'big':
@@ -89,10 +90,10 @@ def silence(audio_chunk):
 def main():
 
     clipNO = 0
-
+    date = time.strftime("%d-%m-%Y", time.localtime())
     # Keep the program running until user force quits it
     while True:
-        filename = "AudioClip" + str(clipNO) + ".wav"
+        filename = "AudioClip" + str(clipNO) + "(" + date + ").wav"
         listen(filename)
         clipNO += 1
 
