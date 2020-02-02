@@ -12,7 +12,7 @@ chunk = 1024                      # Record in chunks of 1024 samples   #
 sample_format = pyaudio.paInt16   # 16 bits per sample                 #
 channels = 1                      # Microphone has 2 channels          #
 fs = 44100                        # Record at 44100 samples per second #
-threshold = 3000                  # Begins recording if surpassed      #
+threshold = 30000                  # Begins recording if surpassed      #
 ########################################################################
 
 # Colours class from Blender Build Scripts
@@ -93,7 +93,7 @@ def main():
     date = time.strftime("%d-%m-%Y", time.localtime())
     # Keep the program running until user force quits it
     while True:
-        filename = "AudioClip" + str(clipNO) + "(" + date + ").wav"
+        filename = "AudioClips/AudioClip" + str(clipNO) + "(" + date + ").wav"
         listen(filename)
         clipNO += 1
 
