@@ -25,6 +25,7 @@ def get_cpu_temperature():
 
 def output():
 
+	# Get Temperature, pressure and humidity
 	bus = SMBus(1)
 	bme280 = BME280(i2c_dev=bus)
 
@@ -40,17 +41,21 @@ def output():
 	pressure = bme280.get_pressure()
 	humidity = bme280.get_humidity()
 
+	# Get gases
 	gases = gas.read_all()
 	nh3 = gases.nh3
 	no2 = gases.oxidising
 
+	# Get light and proximity
 	light = ltr559.get_lux()
 	proxim = ltr559.get_proximity()
 
+	# Calculate current time as string
 	curTime = time.strftime("%d/%m/%y,%H:%M", time.localtime())	
 	
 	return compTemp, humidity, nh3, no2, light, proxim, pressure, curTime
 
+# Writes all values returned by output() to "data.txt"
 def save():
 	file = open("data.txt", "a")
 	
@@ -62,10 +67,11 @@ def save():
 	file.write(line)
 
 	file.close()
-
-	print (line)
-
+# Outputs current runtime to the Enviro+ display as well as 
+# having the screen change between traffic colours depending
+# on a given variable (var)
 def display(var, time, runtime):
+	# Opens the display for writing to
 	disp = ST7735.ST7735(
 		port=0,
 		cs=1,
@@ -79,24 +85,31 @@ def display(var, time, runtime):
 	img = Image.new('RGB', (disp.width, disp.height), color=(0,0,0))
 	draw = ImageDraw.Draw(img)
 	
-	font_size = 24
-	font = ImageFont.truetype("Asap-Bold.ttf", font_size)
-	midFont = ImageFont.truetype("Asap-Bold.ttf", 20)
+	# Construct font types
+	fontSizeHeader = 24
+	fontSizePara = 20
+	fontHeader = ImageFont.truetype("Asap-Bold.ttf", fontSizeHeader)
+	fontPara = ImageFont.truetype("Asap-Bold.ttf", fontSizePara)
 
+	# Depending on var apply traffic light colours
+	# Currently configured for light
 	if (var < 5):
 		rect_colour = (0,250,200)
 		text_colour = (250, 0, 200)
+		
 	elif (var < 9):
 		rect_colour = (250,190,0)
 		text_colour = (0, 190, 250)
+		
 	else:
 		rect_colour = (250,0,0)
 		text_colour = (0, 250, 250)
 
+	# Output all values to the display
 	draw.rectangle((0,0,160,80), rect_colour)
-	draw.text((0, 0), time, font=font, fill=text_colour)
-	draw.text((disp.width/2-75, disp.height/2-5), "Current run time:", font=midFont, fill=text_colour)
-	draw.text((disp.height/2 - 30, disp.width/2 - 30), runtime, font=font, fill=text_colour)
+	draw.text((0, 0), time, font=fontHeader, fill=text_colour)
+	draw.text((disp.width/2-75, disp.height/2-5), "Current run time:", font=fontPara, fill=text_colour)
+	draw.text((disp.height/2 - 30, disp.width/2 - 30), runtime, font=fontHeader, fill=text_colour)
 
 	disp.display(img)
 
@@ -111,11 +124,13 @@ def main():
 
 	client.begin(MQTT_USERNAME, MQTT_PASSWORD, MQTT_CLIENT_ID)
 
+	# Initialise all variables
 	starttime = time.time()
 	temp, hum, nh3, no2, light, proxim, pressure, curTime = output()
 	oldTemp, oldHum, oldNh3, oldNo2, oldLight, oldProxim, oldPressure = temp, hum, nh3, no2, light, proxim, pressure
 	
 	while True:
+		# Send values to Cayenne
 		client.loop()
 
 		client.celsiusWrite(1, temp)
@@ -125,6 +140,7 @@ def main():
 		client.luxWrite(5, light)
 		# client.virtualWrite(6, proxim)
 
+		# Filter inaccurate pressure readings
 		if (pressure < 700):
 			client.virtualWrite(7, oldPressure)
 		else:
@@ -133,13 +149,16 @@ def main():
 
 		save()
 
+		# Calculate how long the program has been running for
 		timeDiff = time.localtime(time.time() - starttime - 3600)
 		runTime = time.strftime("%H:%M", timeDiff)	
 		
 		display(light, curTime, runTime)
 
-		time.sleep(60.0 - ((time.time() - starttime) %60.0))
+		# Have the program send values once every minute
+		time.sleep(60.0 - ((time.time() - starttime) % 60.0))
 
+		# Update values
 		oldTemp, oldHum, oldNh3, oldNo2, oldLight, oldProxim = temp, hum, nh3, no2, light, proxim
 		temp, hum, nh3, no2, light, proxim, pressure, curTime = output()
 
