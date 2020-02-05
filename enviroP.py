@@ -1,8 +1,6 @@
 from bme280 import BME280
-from Adafruit_IO import Client, Feed, RequestError
 from enviroplus import gas
 from PIL import Image, ImageDraw, ImageFont
-from gpiozero import Button
 
 import cayenne.client
 import ST7735
@@ -102,17 +100,9 @@ def display(var, time, runtime):
 
 	disp.display(img)
 
-def send_on():
-  #Publish "1" to Cayenne MQTT Broker Channel 3
-  print("Button pressed\n")
-
-def send_off():
-  client.virtualWrite(3, 0) #Publish "0" to Cayenne MQTT Broker Channel 3
-  print("Button released\n")
-
 def main():
 
-	# Cayenne authentication info. This should be obtained from the Cayenne Dashboard.
+	# Cayenne authentication info
 	MQTT_USERNAME  = "ced46c60-47fc-11ea-ba7c-716e7f5ba423"
 	MQTT_PASSWORD  = "5e41e78b454da9993ca069405291cfa4bf103293"
 	MQTT_CLIENT_ID = "cd803190-47fd-11ea-84bb-8f71124cfdfb"
@@ -121,56 +111,10 @@ def main():
 
 	client.begin(MQTT_USERNAME, MQTT_PASSWORD, MQTT_CLIENT_ID)
 
-	"""
-	ADAFRUIT_IO_KEY = 'aio_nzSL66GSZR7evJ9SdhvaLRUZ5i63'
-	ADAFRUIT_IO_USERNAME = 'The_Bravest_Toaster'
-	
-	aio = Client(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY)
-	try:
-		tempThread = aio.feeds('temp')
-	except RequestError:
-		tempFeed = Feed(name="temp")
-		tempThread = aio.create_feed(tempFeed)
-	
-	try:
-		humidityThread = aio.feeds('humidity')
-	except RequestError:
-		humidFeed = Feed(name="humidity")
-		humidityThread = aio.create_feed(humidFeed)
-	
-	try:
-		no2Thread = aio.feeds('no2')
-	except RequestError:
-		no2Feed = Feed(name="no2")
-		no2Thread = aio.create_feed(no2Feed)
-
-	try:
-		nh3Thread = aio.feeds('no3')
-	except RequestError:
-		nh3Feed = Feed(name="no3")
-		nh3Thread = aio.create_feed(nh3Feed)
-
-	try:
-		lightThread = aio.feeds('photocell')
-	except RequestError:
-		lightFeed = aio.Feed(name="photocell")
-		lightThread = aio.create_feed(lightFeed)
-
-	try:
-		proximThread = aio.feeds('proxim')
-	except RequestError:
-		proximFeed = aio.Feed(name="proxim")
-		proximThread = aio.create_feed(proximFeed)
-	try:
-		pressureThread = aio.feeds('pressure')
-	except RequestError:
-		pressureFeed = aio.Feed(name="pressure")
-		pressureThread = aio.create_feed(pressureThread)
-	"""
-
 	starttime = time.time()
 	temp, hum, nh3, no2, light, proxim, pressure, curTime = output()
 	oldTemp, oldHum, oldNh3, oldNo2, oldLight, oldProxim, oldPressure = temp, hum, nh3, no2, light, proxim, pressure
+	
 	while True:
 		client.loop()
 
@@ -196,34 +140,6 @@ def main():
 
 		time.sleep(60.0 - ((time.time() - starttime) %60.0))
 
-		oldTemp, oldHum, oldNh3, oldNo2, oldLight, oldProxim = temp, hum, nh3, no2, light, proxim
-		temp, hum, nh3, no2, light, proxim, pressure, curTime = output()
-
-	while(True):
-		"""
-		aio.send(tempThread.key, temp)
-		aio.send(humidityThread.key, hum)
-		aio.send(no2Thread.key, no2)
-		aio.send(nh3Thread.key, nh3)
-		aio.send(lightThread.key, light)
-		aio.send(proximThread.key, proxim)
-		
-		if (pressure < 700):
-			aio.send(pressureThread.key, oldPressure)
-		else:
-			aio.send(pressureThread.key, pressure)
-			oldPressure = pressure
-
-		print (oldPressure)	
-		save()
-
-		timeDiff = time.localtime(time.time() - starttime - 3600)
-		runTime = time.strftime("%H:%M", timeDiff)	
-		
-		"""
-		display(light, curTime, runTime)
-	
-		time.sleep(60.0 - ((time.time() - starttime) %60.0))
 		oldTemp, oldHum, oldNh3, oldNo2, oldLight, oldProxim = temp, hum, nh3, no2, light, proxim
 		temp, hum, nh3, no2, light, proxim, pressure, curTime = output()
 
